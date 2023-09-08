@@ -25,6 +25,7 @@
 <body>
     <div id="cesiumContainer"></div>
 
+    <script src="./public/mock/positions.js"></script>
     <script>
         Cesium.Ion.defaultAccessToken =
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwMmM3M2Q2Yi1jOTIzLTRjZWItYjU2YS1mOWM5YTI3OGU5NTYiLCJpZCI6MjgyNzksInNjb3BlcyI6WyJhc2wiLCJhc3IiLCJhc3ciLCJnYyIsInByIl0sImlhdCI6MTU5MzY4NDQwNH0.H_A9xCf17WrntJ9TtMPVnLK_ZC4A30CQEisbOTF4E3U'
@@ -32,12 +33,88 @@
             terrainProvider: Cesium.createWorldTerrain(),
         })
         viewer.scene.debugShowFramesPerSecond = true
-        var tileset = new Cesium.Cesium3DTileset({
-            url: "https://lab.earthsdk.com/model/f15b9e90ac2d11e99dbd8fd044883638/tileset.json",
-            debugShowMemoryUsage: false
+
+
+        // var tileset = new Cesium.Cesium3DTileset({
+        //     url: "https://lab.earthsdk.com/model/f15b9e90ac2d11e99dbd8fd044883638/tileset.json",
+        //     debugShowMemoryUsage: false
+        // })
+        // viewer.scene.primitives.add(tileset)
+        // viewer.zoomTo(tileset)
+
+        viewer.camera.flyTo({
+            destination: Cesium.Rectangle.fromDegrees(
+                117.69579989630051,
+                39.073380513625494,
+                117.72148232146813,
+                39.089051823306804
+            )
         })
-        viewer.scene.primitives.add(tileset)
-        viewer.zoomTo(tileset)
+
+        console.log(positions)
+
+        // 性能测试
+
+        // fromGltf 110M
+        // for (let index = 0; index < positions.length; index++) {
+        //     const item = positions[index];
+        //     const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(
+        //         Cesium.Cartesian3.fromDegrees(
+        //             item.longitude,
+        //             item.latitude,
+        //             item.altitude
+        //         )
+        //     )
+        //     const model = viewer.scene.primitives.add(
+        //         Cesium.Model.fromGltf({
+        //             url: './public/model/Cesium_Air.glb',
+        //             scale: 2,
+        //             allowPicking: true,
+        //             show: true,
+        //             // color: new Cesium.Color(0, 1, 1, 0.3),
+        //             // colorBlendMode: Cesium.ColorBlendMode.MIX,
+        //             // distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
+        //             //   0.0,
+        //             //   500000.0
+        //             // ),
+        //             modelMatrix: modelMatrix
+        //         })
+        //     )
+        //     // 旋转角度
+        //     const headingPitchRoll = Cesium.HeadingPitchRoll.fromDegrees(0, 0, 0)
+        //     // 旋转矩阵
+        //     const rotationMatrix =
+        //         Cesium.Matrix3.fromHeadingPitchRoll(headingPitchRoll)
+        //     const m = model.modelMatrix
+        //     // 矩阵计算
+        //     Cesium.Matrix4.multiplyByMatrix3(m, rotationMatrix, m)
+        //     // 将计算结果再赋值给 modelMatrix
+        //     model.modelMatrix = m
+        // }
+
+        // ModelInstanceCollection 30M
+        const instances = []
+        for (let index = 0; index < positions.length; index++) {
+            const item = positions[index];
+            const modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(
+                Cesium.Cartesian3.fromDegrees(item.longitude, item.latitude, item.altitude)
+            )
+            Cesium.Matrix4.multiplyByUniformScale(
+                modelMatrix,
+                2.0,
+                modelMatrix
+            );
+
+            instances.push({
+                modelMatrix: modelMatrix,
+            })
+        }
+        var collection = viewer.scene.primitives.add(
+            new Cesium.ModelInstanceCollection({
+                url: './public/model/Cesium_Air.glb',
+                instances: instances,
+            })
+        )
     </script>
 </body>
 
